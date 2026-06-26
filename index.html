@@ -1,1 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New Contact</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    h1 {
+      font-size: 22px;
+      color: #0D2535;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      color: #444;
+      margin-bottom: 4px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 15px;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: #4A90B8; }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #0D2535;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #4A90B8; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+
+    #message {
+      margin-top: 16px;
+      font-size: 14px;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    .success { color: #2e7d32; }
+    .error   { color: #c62828; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Add Contact to HubSpot</h1>
+
+    <label for="firstname">First Name</label>
+    <input type="text" id="firstname" placeholder="Jane" />
+
+    <label for="lastname">Last Name</label>
+    <input type="text" id="lastname" placeholder="Smith" />
+
+    <label for="email">Email *</label>
+    <input type="email" id="email" placeholder="jane@example.com" required />
+
+    <label for="company">Company</label>
+    <input type="text" id="company" placeholder="Acme Co." />
+
+    <label for="phone">Phone</label>
+    <input type="tel" id="phone" placeholder="+1 555 000 0000" />
+
+    <button id="submit-btn" onclick="submitContact()">Add Contact</button>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    async function submitContact() {
+      const email = document.getElementById("email").value.trim();
+      if (!email) {
+        showMessage("Email is required.", "error");
+        return;
+      }
+
+      const btn = document.getElementById("submit-btn");
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+      showMessage("", "");
+
+      const payload = {
+        firstname: document.getElementById("firstname").value.trim(),
+        lastname:  document.getElementById("lastname").value.trim(),
+        email,
+        company:   document.getElementById("company").value.trim(),
+        phone:     document.getElementById("phone").value.trim(),
+      };
+
+      try {
+        const res = await fetch("/.netlify/functions/create-contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showMessage("Contact added successfully!", "success");
+          clearForm();
+        } else {
+          showMessage(data.message || "Something went wrong.", "error");
+        }
+      } catch (err) {
+        showMessage("Network error. Please try again.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Add Contact";
+      }
+    }
+
+    function showMessage(text, type) {
+      const el = document.getElementById("message");
+      el.textContent = text;
+      el.className = type;
+    }
+
+    function clearForm() {
+      ["firstname", "lastname", "email", "company", "phone"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
+    }
+  </script>
+</body>
+</html>
